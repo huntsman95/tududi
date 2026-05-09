@@ -18,6 +18,10 @@ dbConfig = {
 };
 
 const sequelize = new Sequelize(dbConfig);
+const sqliteBusyTimeoutMs = Number.parseInt(
+    process.env.SQLITE_BUSY_TIMEOUT_MS || '30000',
+    10
+);
 
 // SQLite performance optimizations for slow I/O systems (e.g., Synology NAS with HDDs)
 if (dbConfig.dialect === 'sqlite') {
@@ -26,8 +30,12 @@ if (dbConfig.dialect === 'sqlite') {
         'PRAGMA journal_mode=WAL;',
         // Relaxed sync: faster writes with minimal durability risk for single-user app
         'PRAGMA synchronous=NORMAL;',
-        // 5 second busy timeout: prevents "database is locked" errors under load
-        'PRAGMA busy_timeout=5000;',
+        // Busy timeout: waits for transient write locks before failing
+        `PRAGMA busy_timeout=${
+            Number.isFinite(sqliteBusyTimeoutMs) && sqliteBusyTimeoutMs > 0
+                ? sqliteBusyTimeoutMs
+                : 30000
+        };`,
         // 64MB cache: keeps more data in memory, reduces disk reads
         'PRAGMA cache_size=-64000;',
         // Store temp tables in memory instead of disk
