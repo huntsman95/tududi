@@ -41,11 +41,17 @@ describe('MCP retry utilities', () => {
         });
 
         it('should throw when max attempts are exhausted', async () => {
-            const error = { code: 'SQLITE_BUSY', message: 'database is locked' };
+            const error = {
+                code: 'SQLITE_BUSY',
+                message: 'database is locked',
+            };
             const operation = jest.fn().mockRejectedValue(error);
 
             await expect(
-                withSqliteBusyRetry(operation, { maxAttempts: 2, baseDelayMs: 1 })
+                withSqliteBusyRetry(operation, {
+                    maxAttempts: 2,
+                    baseDelayMs: 1,
+                })
             ).rejects.toBe(error);
             expect(operation).toHaveBeenCalledTimes(2);
         });
@@ -55,10 +61,12 @@ describe('MCP retry utilities', () => {
             const operation = jest.fn().mockRejectedValue(error);
 
             await expect(
-                withSqliteBusyRetry(operation, { maxAttempts: 3, baseDelayMs: 1 })
+                withSqliteBusyRetry(operation, {
+                    maxAttempts: 3,
+                    baseDelayMs: 1,
+                })
             ).rejects.toThrow('Unexpected failure');
             expect(operation).toHaveBeenCalledTimes(1);
         });
     });
 });
-

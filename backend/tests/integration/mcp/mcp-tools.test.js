@@ -256,7 +256,10 @@ describe('MCP Tools Integration', () => {
                 expect(response.status).toBe(200);
                 const { content } = getToolContent(response);
                 expect(content.message).toBe('Task created successfully');
-                expect(content.task.tags).toEqual(
+                const taskTagNames = content.task.tags.map((tag) =>
+                    typeof tag === 'string' ? tag : tag.name
+                );
+                expect(taskTagNames).toEqual(
                     expect.arrayContaining(['alpha-tag', 'beta-tag'])
                 );
             });

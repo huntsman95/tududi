@@ -29,8 +29,7 @@ async function withSqliteBusyRetry(operation, options = {}) {
         try {
             return await operation();
         } catch (error) {
-            const canRetry =
-                isSqliteBusyError(error) && attempt < maxAttempts;
+            const canRetry = isSqliteBusyError(error) && attempt < maxAttempts;
             if (!canRetry) {
                 throw error;
             }
@@ -45,4 +44,3 @@ module.exports = {
     isSqliteBusyError,
     withSqliteBusyRetry,
 };
-
