@@ -91,6 +91,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
             'errors.projectImageUpload',
             'Failed to upload image. Please try a smaller file or a different format.'
         );
+        let serverErrorMessage: string | null = null;
 
         try {
             const formData = new FormData();
@@ -111,6 +112,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
                     const errData = await response.json();
                     if (errData?.error || errData?.message) {
                         serverMessage = errData.error || errData.message;
+                        serverErrorMessage = serverMessage;
                     }
                 } catch {
                     // ignore parse errors
@@ -126,11 +128,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
             throw new Error('Image URL missing from upload response');
         } catch (error) {
             console.error('Error uploading image:', error);
-            setError(
-                error instanceof Error && error.message
-                    ? error.message
-                    : defaultUploadError
-            );
+            setError(serverErrorMessage || defaultUploadError);
             return null;
         } finally {
             setIsUploading(false);

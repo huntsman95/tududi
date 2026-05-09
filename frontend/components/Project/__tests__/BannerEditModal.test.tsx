@@ -5,7 +5,7 @@ import BannerEditModal from '../BannerEditModal';
 import { getCsrfToken } from '../../../utils/csrfService';
 
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
+    useTranslation: () => ({ t: (key: string, fallback: string) => fallback }),
 }));
 
 jest.mock('../../../utils/bannersService', () => ({
@@ -39,7 +39,7 @@ describe('BannerEditModal upload', () => {
             json: async () => ({ imageUrl: '/uploads/test-banner.jpg' }),
         });
 
-        const onSave = jest.fn().mockRejectedValue(new Error('save failed'));
+        const onSave = jest.fn().mockResolvedValue(undefined);
         render(
             <BannerEditModal
                 isOpen={true}
@@ -60,6 +60,9 @@ describe('BannerEditModal upload', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
         await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+        await waitFor(() =>
+            expect(onSave).toHaveBeenCalledWith('/uploads/test-banner.jpg')
+        );
 
         expect(mockFetch).toHaveBeenCalledWith(
             '/api/upload/project-image',
