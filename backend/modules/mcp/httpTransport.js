@@ -9,6 +9,7 @@ const {
     ListToolsRequestSchema,
 } = require('@modelcontextprotocol/sdk/types.js');
 const { registerAllTools } = require('./toolRegistry');
+const { withSqliteBusyRetry } = require('./retry');
 
 /**
  * Handle MCP HTTP request
@@ -56,9 +57,13 @@ async function handleMcpHttpRequest(req, res, user, apiToken) {
             }
 
             try {
-                const result = await tool.handler(
-                    request.params.arguments || {},
-                    context
+                const result = await withSqliteBusyRetry(
+                    async () =>
+                        tool.handler(request.params.arguments || {}, context),
+                    {
+                        maxAttempts: 3,
+                        baseDelayMs: 100,
+                    }
                 );
                 return result;
             } catch (error) {
@@ -88,13 +93,6 @@ async function handleMcpHttpRequest(req, res, user, apiToken) {
 
         // Handle the HTTP request
         await transport.handleRequest(req, res, req.body);
-
-        // Update token last_used_at (fire and forget)
-        apiToken
-            .update({ last_used_at: new Date() })
-            .catch((err) =>
-                console.error('Failed to update token last_used_at:', err)
-            );
     } catch (error) {
         console.error('MCP HTTP handler error:', error);
 

@@ -242,6 +242,27 @@ describe('MCP Tools Integration', () => {
                 const { content } = getToolContent(response);
                 expect(content.task.due_date).toBeDefined();
             });
+
+            it('should create a task with tags', async () => {
+                const response = await callMcpTool(
+                    apiTokenValue,
+                    'create_task',
+                    {
+                        name: 'Task with Tags',
+                        tags: ['alpha-tag', 'beta-tag'],
+                    }
+                );
+
+                expect(response.status).toBe(200);
+                const { content } = getToolContent(response);
+                expect(content.message).toBe('Task created successfully');
+                const taskTagNames = content.task.tags.map((tag) =>
+                    typeof tag === 'string' ? tag : tag.name
+                );
+                expect(taskTagNames).toEqual(
+                    expect.arrayContaining(['alpha-tag', 'beta-tag'])
+                );
+            });
         });
 
         describe('get_task', () => {
@@ -534,6 +555,27 @@ describe('MCP Tools Integration', () => {
                 const { content } = getToolContent(response);
                 expect(content.project.status).toBe('in_progress');
                 expect(content.project.priority).toBe(2);
+            });
+
+            it('should create a project with tags', async () => {
+                const response = await callMcpTool(
+                    apiTokenValue,
+                    'create_project',
+                    {
+                        name: 'Tagged MCP Project',
+                        tags: ['mcp-project-tag-a', 'mcp-project-tag-b'],
+                    }
+                );
+
+                expect(response.status).toBe(200);
+                const { content } = getToolContent(response);
+                expect(content.message).toBe('Project created successfully');
+                expect(content.project.tags).toEqual(
+                    expect.arrayContaining([
+                        'mcp-project-tag-a',
+                        'mcp-project-tag-b',
+                    ])
+                );
             });
         });
 

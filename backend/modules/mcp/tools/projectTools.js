@@ -159,14 +159,13 @@ function registerProjectTools(server, context, tools) {
 
             // Handle tags if provided
             if (params.tags && params.tags.length > 0) {
-                const tagInstances = await Promise.all(
-                    params.tags.map(async (tagName) => {
-                        const [tag] = await Tag.findOrCreate({
-                            where: { name: tagName, user_id: context.userId },
-                        });
-                        return tag;
-                    })
-                );
+                const tagInstances = [];
+                for (const tagName of params.tags) {
+                    const [tag] = await Tag.findOrCreate({
+                        where: { name: tagName, user_id: context.userId },
+                    });
+                    tagInstances.push(tag);
+                }
                 await project.setTags(tagInstances);
             }
 
