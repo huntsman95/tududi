@@ -2,6 +2,7 @@ const { Sequelize } = require('sequelize');
 const path = require('path');
 const { getConfig } = require('../config/config');
 const config = getConfig();
+const DEFAULT_SQLITE_BUSY_TIMEOUT_MS = 30000;
 
 let dbConfig;
 
@@ -18,10 +19,15 @@ dbConfig = {
 };
 
 const sequelize = new Sequelize(dbConfig);
-const sqliteBusyTimeoutMs = Number.parseInt(
-    process.env.SQLITE_BUSY_TIMEOUT_MS || '30000',
+const sqliteBusyTimeoutMsCandidate = Number.parseInt(
+    process.env.SQLITE_BUSY_TIMEOUT_MS || `${DEFAULT_SQLITE_BUSY_TIMEOUT_MS}`,
     10
 );
+const sqliteBusyTimeoutMs =
+    Number.isFinite(sqliteBusyTimeoutMsCandidate) &&
+    sqliteBusyTimeoutMsCandidate > 0
+        ? sqliteBusyTimeoutMsCandidate
+        : DEFAULT_SQLITE_BUSY_TIMEOUT_MS;
 
 // SQLite performance optimizations for slow I/O systems (e.g., Synology NAS with HDDs)
 if (dbConfig.dialect === 'sqlite') {
@@ -31,11 +37,7 @@ if (dbConfig.dialect === 'sqlite') {
         // Relaxed sync: faster writes with minimal durability risk for single-user app
         'PRAGMA synchronous=NORMAL;',
         // Busy timeout: waits for transient write locks before failing
-        `PRAGMA busy_timeout=${
-            Number.isFinite(sqliteBusyTimeoutMs) && sqliteBusyTimeoutMs > 0
-                ? sqliteBusyTimeoutMs
-                : 30000
-        };`,
+        `PRAGMA busy_timeout=${sqliteBusyTimeoutMs};`,
         // 64MB cache: keeps more data in memory, reduces disk reads
         'PRAGMA cache_size=-64000;',
         // Store temp tables in memory instead of disk

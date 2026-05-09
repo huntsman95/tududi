@@ -15,7 +15,9 @@ function isSqliteBusyError(error) {
         return true;
     }
 
-    const message = `${error.message || ''} ${error.original?.message || ''}`;
+    const message = [error.message, error.original?.message]
+        .filter(Boolean)
+        .join(' ');
     return /SQLITE_BUSY|database is locked/i.test(message);
 }
 
