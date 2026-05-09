@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getPresetBanners, PresetBanner } from '../../utils/bannersService';
 import { getApiPath, getAssetPath } from '../../config/paths';
+import { getCsrfToken } from '../../utils/csrfService';
 
 interface BannerEditModalProps {
     isOpen: boolean;
@@ -86,6 +87,12 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
         if (!imageFile) return null;
 
         setIsUploading(true);
+        const defaultUploadError = t(
+            'errors.projectImageUpload',
+            'Failed to upload image. Please try a smaller file or a different format.'
+        );
+        let serverErrorMessage: string | null = null;
+
         try {
             const formData = new FormData();
             formData.append('image', imageFile);
@@ -93,14 +100,20 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
             const response = await fetch(getApiPath('upload/project-image'), {
                 method: 'POST',
                 credentials: 'include',
+                headers: {
+                    'x-csrf-token': await getCsrfToken(),
+                },
                 body: formData,
             });
 
             if (!response.ok) {
-                let serverMessage = 'Failed to upload image';
+                let serverMessage = defaultUploadError;
                 try {
                     const errData = await response.json();
-                    if (errData?.error) serverMessage = errData.error;
+                    if (errData?.error || errData?.message) {
+                        serverMessage = errData.error || errData.message;
+                        serverErrorMessage = serverMessage;
+                    }
                 } catch {
                     // ignore parse errors
                 }
@@ -115,12 +128,7 @@ const BannerEditModal: React.FC<BannerEditModalProps> = ({
             throw new Error('Image URL missing from upload response');
         } catch (error) {
             console.error('Error uploading image:', error);
-            setError(
-                t(
-                    'errors.projectImageUpload',
-                    'Failed to upload image. Please try a smaller file or a different format.'
-                )
-            );
+            setError(serverErrorMessage || defaultUploadError);
             return null;
         } finally {
             setIsUploading(false);
