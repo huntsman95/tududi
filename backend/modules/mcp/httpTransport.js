@@ -15,13 +15,12 @@ const { withSqliteBusyRetry } = require('./retry');
  * Handle MCP HTTP request
  * This creates a stateless MCP server for each request
  */
-async function handleMcpHttpRequest(req, res, user, apiToken) {
+async function handleMcpHttpRequest(req, res, user) {
     try {
         // Create context for tools
         const context = {
             userId: user.id,
             user: user,
-            apiToken: apiToken,
         };
 
         // Initialize MCP server
